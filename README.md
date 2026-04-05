@@ -46,6 +46,15 @@ Required values:
 - `music163`
 - `music_v1`
 
+### Agent Skills
+
+The repository now includes a local [skills](skills) directory for agent ecosystems such as Codex or OpenClaw.
+
+Current skills:
+
+- [skills/musigate-cli](skills/musigate-cli)
+- [skills/add-bot-adapter](skills/add-bot-adapter)
+
 ### Usage
 
 Login to Telegram:
@@ -131,6 +140,15 @@ cp .env.example .env
 
 - `music163`
 - `music_v1`
+
+### 智能体 Skills
+
+仓库根目录新增了一个本地 [skills](skills) 目录，方便 Codex、OpenClaw 这类智能体快速接入。
+
+当前提供：
+
+- [skills/musigate-cli](skills/musigate-cli)
+- [skills/add-bot-adapter](skills/add-bot-adapter)
 
 ### 使用方式
 

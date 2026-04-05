@@ -72,7 +72,7 @@ class Executor:
 
         elif action == "respond_list":
             if not context.get("lastResponse"):
-                raise ValueError("褰撳墠娌℃湁鍙繑鍥炵殑鎼滅储缁撴灉")
+                raise ValueError("当前没有可返回的搜索结果")
 
             response = context["lastResponse"]
             text = (response.get("text") or "").strip()

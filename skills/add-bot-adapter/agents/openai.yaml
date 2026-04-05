@@ -1,0 +1,4 @@
+interface:
+  display_name: "Add Bot Adapter"
+  short_description: "Add or validate musigate Telegram bot adapters"
+  default_prompt: "Use $add-bot-adapter to integrate or validate a musigate Telegram bot adapter."

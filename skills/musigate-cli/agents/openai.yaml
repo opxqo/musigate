@@ -1,0 +1,4 @@
+interface:
+  display_name: "Musigate CLI"
+  short_description: "Run and troubleshoot musigate CLI workflows"
+  default_prompt: "Use $musigate-cli to run or debug a musigate command-line workflow."
