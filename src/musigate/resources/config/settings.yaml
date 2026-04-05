@@ -1,0 +1,20 @@
+telegram:
+  apiId: ""
+  apiHash: ""
+  phone: ""
+  sessionName: "musigate"
+  proxy:
+    enabled: false
+    type: "socks5"
+    host: "127.0.0.1"
+    port: 7897
+    username: ""
+    password: ""
+
+download:
+  defaultOutput: "./downloads"
+  filenameTemplate: "{artist}-{title}.{ext}"
+
+logging:
+  level: "INFO"
+  file: "logs/musigate.log"

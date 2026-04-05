@@ -1,0 +1,152 @@
+import json
+
+from typer.testing import CliRunner
+
+from musigate import cli
+
+
+runner = CliRunner()
+
+
+def test_search_json_output(monkeypatch):
+    async def fake_run_engine_command(command, bot, include_context=False, **kwargs):
+        assert command == "search"
+        assert bot == "music163"
+        assert include_context is True
+        assert kwargs["query"] == "不凡"
+
+        raw_text = "1.「不凡」 - 王铮亮\n2.「不凡2024」 - Misic涂"
+        return {
+            "name": "Music163",
+            "bot_username": "@Music163bot",
+        }, {
+            "result": raw_text,
+            "lastResponse": {
+                "type": "inline_buttons",
+                "text": raw_text,
+                "buttons": [
+                    [{"text": "1", "data": "1"}],
+                    [{"text": "2", "data": "2"}],
+                ],
+            },
+        }
+
+    monkeypatch.setattr(cli, "_run_engine_command", fake_run_engine_command)
+
+    result = runner.invoke(cli.app, ["search", "不凡", "--bot", "music163", "--json"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["command"] == "search"
+    assert payload["query"] == "不凡"
+    assert payload["results"][0]["index"] == 1
+    assert payload["results"][0]["title"] == "「不凡」"
+    assert payload["results"][0]["artist"] == "王铮亮"
+
+
+def test_download_json_output(monkeypatch):
+    async def fake_run_engine_command(command, bot, include_context=False, **kwargs):
+        assert command == "download"
+        assert include_context is True
+        assert kwargs["show_progress"] is False
+        assert kwargs["pick"] == 2
+
+        return {
+            "name": "Music163",
+            "bot_username": "@Music163bot",
+        }, {
+            "pick": 2,
+            "output": "./downloads",
+            "result": "./downloads/Linkin Park-Numb.mp3",
+            "result_filename": "Linkin Park-Numb.mp3",
+            "lastResponse": {
+                "type": "audio_file",
+                "title": "Numb",
+                "artist": "Linkin Park",
+                "ext": "mp3",
+                "duration": 185,
+                "mime_type": "audio/mpeg",
+                "size": 12345678,
+                "file_name": "Linkin Park-Numb.mp3",
+                "text": "Numb - Linkin Park",
+            },
+        }
+
+    monkeypatch.setattr(cli, "_run_engine_command", fake_run_engine_command)
+    monkeypatch.setattr(cli, "load_settings", lambda: {"download": {"defaultOutput": "./downloads"}})
+
+    result = runner.invoke(cli.app, ["download", "Numb", "--bot", "music163", "--pick", "2", "--json"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["selected_index"] == 2
+    assert payload["saved_path"].endswith("Linkin Park-Numb.mp3")
+    assert payload["track"]["title"] == "Numb"
+    assert payload["track"]["artist"] == "Linkin Park"
+    assert payload["track"]["duration"] == 185
+    assert payload["track"]["mime_type"] == "audio/mpeg"
+    assert payload["track"]["size"] == 12345678
+    assert payload["track"]["file_name"] == "Linkin Park-Numb.mp3"
+
+
+def test_download_human_output_enables_progress(monkeypatch):
+    async def fake_run_engine_command(command, bot, include_context=False, **kwargs):
+        assert command == "download"
+        assert include_context is False
+        assert kwargs["show_progress"] is True
+        assert kwargs["pick"] == 2
+        return {
+            "name": "Music163",
+            "bot_username": "@Music163bot",
+        }, "./downloads/Linkin Park-Numb.mp3"
+
+    monkeypatch.setattr(cli, "_run_engine_command", fake_run_engine_command)
+    monkeypatch.setattr(cli, "load_settings", lambda: {"download": {"defaultOutput": "./downloads"}})
+
+    result = runner.invoke(cli.app, ["download", "Numb", "--bot", "music163", "--pick", "2"])
+
+    assert result.exit_code == 0
+    assert "第 2 条结果" in result.stdout
+    assert "Linkin Park-Numb.mp3" in result.stdout
+
+
+def test_list_bots_json_output(monkeypatch):
+    monkeypatch.setattr(
+        cli,
+        "list_bot_configs",
+        lambda: [
+            {
+                "name": "Music163",
+                "bot_username": "@Music163bot",
+                "description": "网易云歌曲下载机器人",
+                "version": "1.0",
+                "commands": {"download": {}, "search": {}},
+            }
+        ],
+    )
+
+    result = runner.invoke(cli.app, ["list-bots", "--json"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["count"] == 1
+    assert payload["bots"][0]["commands"] == ["download", "search"]
+
+
+def test_test_json_error_output(monkeypatch):
+    def fake_load_bot(_bot):
+        raise FileNotFoundError("missing bot config")
+
+    monkeypatch.setattr(cli, "load_bot", fake_load_bot)
+
+    result = runner.invoke(cli.app, ["test", "--bot", "missing", "--json"])
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is False
+    assert payload["command"] == "test"
+    assert payload["bot"] == "missing"
+    assert "missing bot config" in payload["error"]

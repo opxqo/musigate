@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "musigate"
+version = "0.1.0a1"
+description = "A CLI tool to download music via Telegram bots"
+readme = "README.md"
+authors = [{ name = "AI Assistant" }]
+requires-python = ">=3.8"
+dependencies = [
+    "telethon>=1.33.0",
+    "PySocks>=1.7.1",
+    "typer>=0.9.0",
+    "pyyaml>=6.0.1",
+    "rich>=13.7.0",
+    "aiofiles>=23.2.1",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.5.3"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.3",
+    "pytest-asyncio>=0.23.2"
+]
+
+[project.scripts]
+musigate = "musigate.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"musigate.resources" = ["bots/*.yaml", "config/*.yaml"]

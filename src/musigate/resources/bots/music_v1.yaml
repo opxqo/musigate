@@ -1,0 +1,40 @@
+name: MusicV1
+bot_username: "@music_v1bot"
+description: "Music search and download bot using /search and numbered result buttons."
+version: "1.0"
+
+settings:
+  timeout: 20
+  retry: 2
+
+commands:
+  download:
+    steps:
+      - action: send_message
+        content: "/search {query}"
+
+      - action: wait_response
+        expect: inline_buttons
+        timeout: 15
+
+      - action: click_button
+        strategy: match_text_index
+        query: "{query}"
+
+      - action: wait_response
+        expect: audio_file
+        timeout: 30
+
+      - action: download
+        output: "{title}"
+
+  search:
+    steps:
+      - action: send_message
+        content: "/search {query}"
+
+      - action: wait_response
+        expect: inline_buttons
+        timeout: 15
+
+      - action: respond_list
