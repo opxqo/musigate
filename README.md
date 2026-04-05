@@ -19,7 +19,7 @@ pip install musigate
 From a local wheel:
 
 ```bash
-pip install dist/musigate-0.1.0a1-py3-none-any.whl
+pip install dist/musigate-0.1.0a2-py3-none-any.whl
 ```
 
 For development:
@@ -114,7 +114,7 @@ pip install musigate
 从本地 wheel 安装：
 
 ```bash
-pip install dist/musigate-0.1.0a1-py3-none-any.whl
+pip install dist/musigate-0.1.0a2-py3-none-any.whl
 ```
 
 开发模式安装：

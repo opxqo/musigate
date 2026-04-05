@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "musigate"
-version = "2.0.0"
+dynamic = ["version"]
 description = "YAML-driven Telegram Bot orchestration engine for automated interactions"
 readme = "README.md"
 license = { text = "MIT" }
@@ -22,7 +22,7 @@ keywords = [
     "orchestration",
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Intended Audience :: End Users/Desktop",
@@ -64,6 +64,9 @@ musigate = "musigate.cli:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.dynamic]
+version = { attr = "musigate.__version__" }
 
 [tool.setuptools.package-data]
 "musigate.resources" = ["bots/*.yaml", "config/*.yaml"]

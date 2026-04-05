@@ -18,6 +18,7 @@ logs/
 *.egg-info/
 dist/
 build/
+release-dist*/
 tmp_*.py
 musigate_命令映射系统方案.md
 music163bot_download_端到端证据报告.md
