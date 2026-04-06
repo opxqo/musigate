@@ -5,7 +5,7 @@ from importlib.resources.abc import Traversable
 from pathlib import Path
 
 import yaml
-from dotenv import load_dotenv
+from dotenv import load_dotenv, set_key
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -131,6 +131,23 @@ def load_settings():
         settings["telegram"]["proxy"]["password"] = proxy_password
 
     return settings
+
+
+def resolve_env_file() -> Path:
+    return Path.cwd() / ".env"
+
+
+def persist_env_values(values: dict[str, str | int]) -> Path:
+    env_file = resolve_env_file()
+    env_file.parent.mkdir(parents=True, exist_ok=True)
+    env_file.touch(exist_ok=True)
+
+    for key, value in values.items():
+        if value is None or value == "":
+            continue
+        set_key(str(env_file), key, str(value))
+
+    return env_file
 
 
 def validate_telegram_settings(settings: dict) -> None:

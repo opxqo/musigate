@@ -14,6 +14,8 @@ from musigate.telegram.client import Client
 from musigate.utils.config import (
     build_telegram_proxy,
     load_settings,
+    persist_env_values,
+    resolve_env_file,
     validate_telegram_settings,
 )
 
@@ -57,6 +59,47 @@ def _build_client(settings: dict[str, Any]) -> Client:
         session_name=settings["telegram"]["sessionName"],
         proxy=build_telegram_proxy(settings),
     )
+
+
+def _resolve_login_settings(
+    settings: dict[str, Any],
+    *,
+    api_id: int | None,
+    api_hash: str | None,
+    session_name: str | None,
+    save_credentials: bool,
+) -> dict[str, Any]:
+    telegram = settings.setdefault("telegram", {})
+    prompted = False
+
+    effective_api_id = api_id or telegram.get("apiId")
+    if not effective_api_id:
+        effective_api_id = typer.prompt("Telegram API ID", type=int)
+        prompted = True
+
+    effective_api_hash = api_hash or telegram.get("apiHash")
+    if not effective_api_hash:
+        effective_api_hash = typer.prompt("Telegram API hash").strip()
+        prompted = True
+
+    telegram["apiId"] = effective_api_id
+    telegram["apiHash"] = effective_api_hash
+
+    if session_name:
+        telegram["sessionName"] = session_name
+
+    if save_credentials and (prompted or api_id is not None or api_hash is not None or session_name):
+        env_path = persist_env_values(
+            {
+                "TELEGRAM_API_ID": telegram["apiId"],
+                "TELEGRAM_API_HASH": telegram["apiHash"],
+                "TELEGRAM_SESSION_NAME": telegram.get("sessionName", "musigate"),
+            }
+        )
+        if env_path == resolve_env_file():
+            _print_status(f"OK: Saved Telegram credentials to {env_path}", "green")
+
+    return settings
 
 
 async def _run_engine_command(
@@ -221,9 +264,29 @@ def _emit_command_error(
 
 
 @app.command()
-def login():
+def login(
+    api_id: int | None = typer.Option(None, "--api-id", help="Telegram API ID"),
+    api_hash: str | None = typer.Option(None, "--api-hash", help="Telegram API hash"),
+    session_name: str | None = typer.Option(
+        None,
+        "--session-name",
+        help="Session file name, defaults to musigate",
+    ),
+    save_credentials: bool = typer.Option(
+        True,
+        "--save/--no-save",
+        help="Save entered Telegram credentials to .env in the current directory",
+    ),
+):
     """登录 Telegram 账号"""
     settings = load_settings()
+    settings = _resolve_login_settings(
+        settings,
+        api_id=api_id,
+        api_hash=api_hash,
+        session_name=session_name,
+        save_credentials=save_credentials,
+    )
     validate_telegram_settings(settings)
     auth = TelegramAuth(
         api_id=settings["telegram"]["apiId"],

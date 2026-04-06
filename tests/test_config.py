@@ -29,3 +29,21 @@ def test_load_settings_prefers_custom_settings_file(monkeypatch, tmp_path):
 
     assert settings["download"]["defaultOutput"] == "./alpha-downloads"
     assert settings["telegram"]["sessionName"] == "alpha"
+
+
+def test_persist_env_values_writes_env_file(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+
+    env_file = config_module.persist_env_values(
+        {
+            "TELEGRAM_API_ID": 123456,
+            "TELEGRAM_API_HASH": "hash-value",
+            "TELEGRAM_SESSION_NAME": "alpha-session",
+        }
+    )
+
+    assert env_file == tmp_path / ".env"
+    content = env_file.read_text(encoding="utf-8")
+    assert "TELEGRAM_API_ID='123456'" in content
+    assert "TELEGRAM_API_HASH='hash-value'" in content
+    assert "TELEGRAM_SESSION_NAME='alpha-session'" in content

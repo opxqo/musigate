@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from typer.testing import CliRunner
 
@@ -150,3 +151,55 @@ def test_test_json_error_output(monkeypatch):
     assert payload["command"] == "test"
     assert payload["bot"] == "missing"
     assert "missing bot config" in payload["error"]
+
+
+def test_login_prompts_for_missing_credentials_and_saves(monkeypatch, tmp_path):
+    captured = {}
+
+    class FakeAuth:
+        def __init__(self, api_id, api_hash, session_name="musigate", proxy=None):
+            captured["api_id"] = api_id
+            captured["api_hash"] = api_hash
+            captured["session_name"] = session_name
+            captured["proxy"] = proxy
+
+        async def login(self):
+            captured["login_called"] = True
+            return True
+
+    monkeypatch.setattr(
+        cli,
+        "load_settings",
+        lambda: {
+            "telegram": {
+                "apiId": "",
+                "apiHash": "",
+                "sessionName": "musigate",
+                "proxy": {"enabled": False},
+            }
+        },
+    )
+    monkeypatch.setattr(cli, "TelegramAuth", FakeAuth)
+
+    env_path = tmp_path / ".env"
+
+    def fake_persist_env_values(values):
+        captured["saved_values"] = values
+        return env_path
+
+    monkeypatch.setattr(cli, "persist_env_values", fake_persist_env_values)
+    monkeypatch.setattr(cli, "resolve_env_file", lambda: env_path)
+
+    result = runner.invoke(cli.app, ["login"], input="123456\nsecret-hash\n")
+
+    assert result.exit_code == 0
+    assert captured["api_id"] == 123456
+    assert captured["api_hash"] == "secret-hash"
+    assert captured["session_name"] == "musigate"
+    assert captured["login_called"] is True
+    assert captured["saved_values"] == {
+        "TELEGRAM_API_ID": 123456,
+        "TELEGRAM_API_HASH": "secret-hash",
+        "TELEGRAM_SESSION_NAME": "musigate",
+    }
+    assert str(Path(env_path)) in result.stdout.replace("\n", "")

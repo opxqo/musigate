@@ -19,7 +19,7 @@ pip install musigate
 From a local wheel:
 
 ```bash
-pip install dist/musigate-0.1.0a2-py3-none-any.whl
+pip install dist/musigate-0.1.0a3-py3-none-any.whl
 ```
 
 For development:
@@ -30,13 +30,15 @@ pip install -e .[dev]
 
 ### Setup
 
-Copy `.env.example` to `.env`, then fill in your Telegram API credentials:
+The easiest setup flow is to run:
 
 ```bash
-cp .env.example .env
+musigate login
 ```
 
-Required values:
+If `TELEGRAM_API_ID` or `TELEGRAM_API_HASH` is missing, `musigate` will prompt for them and save them to `.env` in your current directory by default.
+
+You can still configure credentials manually with `.env` if you prefer. Required values:
 
 - `TELEGRAM_API_ID`
 - `TELEGRAM_API_HASH`
@@ -114,7 +116,7 @@ pip install musigate
 从本地 wheel 安装：
 
 ```bash
-pip install dist/musigate-0.1.0a2-py3-none-any.whl
+pip install dist/musigate-0.1.0a3-py3-none-any.whl
 ```
 
 开发模式安装：
@@ -125,13 +127,15 @@ pip install -e .[dev]
 
 ### 配置
 
-把 `.env.example` 复制为 `.env`，然后填入你的 Telegram API 凭据：
+最省事的方式是直接运行：
 
 ```bash
-cp .env.example .env
+musigate login
 ```
 
-必填项：
+如果当前目录还没有 `TELEGRAM_API_ID` 或 `TELEGRAM_API_HASH`，`musigate` 会直接提示你输入，并默认保存到当前目录的 `.env`。
+
+如果你更喜欢手动配置，也可以自己写 `.env`。必填项：
 
 - `TELEGRAM_API_ID`
 - `TELEGRAM_API_HASH`
