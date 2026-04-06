@@ -2,13 +2,13 @@
 
 ## Development entrypoint
 
-Use the repo virtualenv entrypoint during development:
+Use the repo virtualenv during development:
 
 ```powershell
 .\.venv\Scripts\python.exe -m musigate.cli <command> ...
 ```
 
-## Common commands
+## Baseline commands
 
 List adapters:
 
@@ -17,10 +17,16 @@ List adapters:
 .\.venv\Scripts\python.exe -m musigate.cli list-bots --json
 ```
 
-Login:
+Login with interactive credential capture:
 
 ```powershell
 .\.venv\Scripts\python.exe -m musigate.cli login
+```
+
+Login with explicit credentials:
+
+```powershell
+.\.venv\Scripts\python.exe -m musigate.cli login --api-id 123456 --api-hash your_hash
 ```
 
 Search:
@@ -57,6 +63,7 @@ Inspect machine-readable download output:
 ## Relevant files
 
 - CLI entrypoint: [src/musigate/cli.py](../../../src/musigate/cli.py)
+- Config and credential paths: [src/musigate/utils/config.py](../../../src/musigate/utils/config.py)
 - Adapter loader: [src/musigate/adapters/loader.py](../../../src/musigate/adapters/loader.py)
 - Download progress: [src/musigate/utils/downloader.py](../../../src/musigate/utils/downloader.py)
 - Metadata parsing: [src/musigate/telegram/listener.py](../../../src/musigate/telegram/listener.py)
