@@ -1,6 +1,7 @@
 import asyncio
 from musigate.gateway.executor import Executor
 
+
 class Engine:
     def __init__(self, bot_config: dict, telegram_client):
         self.config = bot_config
@@ -21,10 +22,10 @@ class Engine:
             "pick": kwargs.get("pick"),
             "output": kwargs.get("output", "./downloads"),
             "show_progress": kwargs.get("show_progress", False),
-            "lastResponse": None,
             "last_response": None,
-            "extractedData": {},
-            "result": None
+            "extracted_data": {},
+            "last_action_message_id": None,
+            "result": None,
         }
         await self._run_steps(command_def["steps"], context)
 

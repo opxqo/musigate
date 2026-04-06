@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import suppress
 import re
 from pathlib import Path
 
@@ -22,22 +23,21 @@ class Listener:
         @self.client.on(events.NewMessage(from_users=self.bot))
         async def handler(event):
             response = self._parse(event.message, expect)
-            if response:
-                if not future.done():
-                    future.set_result(response)
-                self.client.remove_event_handler(handler)
+            if response and not future.done():
+                future.set_result(response)
 
         try:
             recent = await self._find_recent_match(expect, after_message_id=after_message_id)
             if recent is not None:
                 if not future.done():
                     future.set_result(recent)
-                self.client.remove_event_handler(handler)
                 return recent
             return await asyncio.wait_for(future, timeout=timeout)
-        except asyncio.TimeoutError:
-            self.client.remove_event_handler(handler)
-            raise TimeoutError(f"Timed out waiting for {expect} ({timeout}s)")
+        except asyncio.TimeoutError as error:
+            raise TimeoutError(f"Timed out waiting for {expect} ({timeout}s)") from error
+        finally:
+            with suppress(Exception):
+                self.client.remove_event_handler(handler)
 
     def _parse(self, message, expect: str):
         parsed = self._parse_any(message)

@@ -1,8 +1,10 @@
 import re
+
 from musigate.gateway.selector import Selector
-from musigate.utils.helper import render_template
-from musigate.utils.downloader import Downloader
 from musigate.telegram.listener import Listener
+from musigate.utils.downloader import Downloader
+from musigate.utils.helper import render_template
+
 
 class Executor:
     def __init__(self, config, client):
@@ -19,18 +21,18 @@ class Executor:
         if action == "send_message":
             content = render_template(step["content"], render_context)
             sent_message = await self.client.send_message(
-                self.config["bot_username"], content
+                self.config["bot_username"],
+                content,
             )
-            context["lastActionMessageId"] = getattr(sent_message, "id", None)
+            context["last_action_message_id"] = getattr(sent_message, "id", None)
 
         elif action == "wait_response":
             timeout = step.get("timeout", self.config["settings"]["timeout"])
             response = await self.listener.wait(
                 expect=step["expect"],
                 timeout=timeout,
-                after_message_id=context.get("lastActionMessageId"),
+                after_message_id=context.get("last_action_message_id"),
             )
-            context["lastResponse"] = response
             context["last_response"] = response
 
             if "extract" in step and step["extract"]:
@@ -40,29 +42,45 @@ class Executor:
                 if pattern and save_as and "text" in response:
                     match = re.search(pattern, response["text"], re.MULTILINE)
                     if match:
-                        context["extractedData"][save_as] = match.group(1) if match.groups() else match.group(0)
+                        context["extracted_data"][save_as] = (
+                            match.group(1) if match.groups() else match.group(0)
+                        )
 
         elif action == "click_button":
-            if not context.get("lastResponse") or "buttons" not in context["lastResponse"]:
-                raise ValueError("当前没有可点击的按钮响应")
+            if (
+                not context.get("last_response")
+                or "buttons" not in context["last_response"]
+            ):
+                raise ValueError("No button response available")
 
-            buttons = context["lastResponse"]["buttons"]
+            buttons = context["last_response"]["buttons"]
             button = self._select_button(step, context, render_context, buttons)
             await self.client.click_button(button)
             source_message = button.get("_message")
-            context["lastActionMessageId"] = getattr(source_message, "id", context.get("lastActionMessageId"))
+            context["last_action_message_id"] = getattr(
+                source_message,
+                "id",
+                context.get("last_action_message_id"),
+            )
 
         elif action == "download":
-            if not context.get("lastResponse") or "file" not in context["lastResponse"]:
-                raise ValueError("当前没有可下载的文件响应")
+            if (
+                not context.get("last_response")
+                or "file" not in context["last_response"]
+            ):
+                raise ValueError("No file response available")
 
             filename = render_template(
-                step.get("output", "{title}.{ext}"), render_context
+                step.get("output", "{title}.{ext}"),
+                render_context,
             )
-            filename = self._ensure_extension(filename, context["lastResponse"].get("ext"))
+            filename = self._ensure_extension(
+                filename,
+                context["last_response"].get("ext"),
+            )
 
             saved_path = await self.downloader.save(
-                context["lastResponse"]["file"],
+                context["last_response"]["file"],
                 context["output"],
                 filename,
                 show_progress=context.get("show_progress", False),
@@ -71,10 +89,10 @@ class Executor:
             context["result_filename"] = filename
 
         elif action == "respond_list":
-            if not context.get("lastResponse"):
-                raise ValueError("当前没有可返回的搜索结果")
+            if not context.get("last_response"):
+                raise ValueError("No search result response available")
 
-            response = context["lastResponse"]
+            response = context["last_response"]
             text = (response.get("text") or "").strip()
             if text:
                 context["result"] = text
@@ -89,25 +107,28 @@ class Executor:
                 context["result"] = ""
 
         elif action == "respond_buttons":
-            if not context.get("lastResponse") or "buttons" not in context["lastResponse"]:
-                raise ValueError("当前没有可返回的按钮响应")
-            context["result"] = context["lastResponse"]["buttons"]
+            if (
+                not context.get("last_response")
+                or "buttons" not in context["last_response"]
+            ):
+                raise ValueError("No button response available")
+            context["result"] = context["last_response"]["buttons"]
 
         elif action == "branch":
-            last_resp = context.get("lastResponse", {})
+            last_response = context.get("last_response", {})
             matched = False
             for case in step.get("cases", []):
                 when = case.get("when", {})
                 match = True
-                if "type" in when and when["type"] != last_resp.get("type"):
+                if "type" in when and when["type"] != last_response.get("type"):
                     match = False
 
                 if "contains" in when:
-                    if when["contains"] not in last_resp.get("text", ""):
+                    if when["contains"] not in last_response.get("text", ""):
                         match = False
 
                 if "not_contains" in when:
-                    if when["not_contains"] in last_resp.get("text", ""):
+                    if when["not_contains"] in last_response.get("text", ""):
                         match = False
 
                 if match:
@@ -116,24 +137,26 @@ class Executor:
                         await self.run(sub_step, context)
                     break
             if not matched:
-                raise ValueError("branch 未匹配到任何 case")
+                raise ValueError("branch did not match any case")
 
         elif action == "error":
-            message = render_template(step.get("message", "执行发生错误"), render_context)
+            message = render_template(
+                step.get("message", "execution failed"),
+                render_context,
+            )
             raise RuntimeError(message)
         else:
-            raise ValueError(f"未知 action: {action}")
+            raise ValueError(f"Unknown action: {action}")
 
     def _build_render_context(self, context: dict) -> dict:
         render_context = {
             **context,
-            **context.get("extractedData", {}),
-            "extractedData": context.get("extractedData", {}),
+            **context.get("extracted_data", {}),
+            "extracted_data": context.get("extracted_data", {}),
         }
-        last_response = context.get("lastResponse") or context.get("last_response")
+        last_response = context.get("last_response")
         if last_response:
             render_context.update(last_response)
-            render_context["lastResponse"] = last_response
             render_context["last_response"] = last_response
         return render_context
 
@@ -182,5 +205,5 @@ class Executor:
             buttons,
             strategy=step["strategy"],
             query=query,
-            response_text=context["lastResponse"].get("text", ""),
+            response_text=context["last_response"].get("text", ""),
         )

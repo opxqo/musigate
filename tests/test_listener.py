@@ -9,6 +9,7 @@ class FakeClient:
     def __init__(self, messages):
         self._messages = messages
         self.handlers = []
+        self.raise_on_get_messages = None
 
     def on(self, _event):
         def decorator(handler):
@@ -22,6 +23,8 @@ class FakeClient:
             self.handlers.remove(handler)
 
     async def get_messages(self, _bot, limit=10):
+        if self.raise_on_get_messages is not None:
+            raise self.raise_on_get_messages
         return self._messages[:limit]
 
 
@@ -57,6 +60,30 @@ async def test_listener_wait_reads_recent_matching_message():
 
     assert result["type"] == "inline_buttons"
     assert result["buttons"][0][0]["text"] == "1"
+    assert client.handlers == []
+
+
+@pytest.mark.asyncio
+async def test_listener_wait_cleans_handler_on_timeout():
+    client = FakeClient([])
+    listener = Listener(client, "@testbot")
+
+    with pytest.raises(TimeoutError):
+        await listener.wait("inline_buttons", timeout=0.01)
+
+    assert client.handlers == []
+
+
+@pytest.mark.asyncio
+async def test_listener_wait_cleans_handler_when_recent_lookup_fails():
+    client = FakeClient([])
+    client.raise_on_get_messages = RuntimeError("boom")
+    listener = Listener(client, "@testbot")
+
+    with pytest.raises(RuntimeError, match="boom"):
+        await listener.wait("inline_buttons", timeout=0.01)
+
+    assert client.handlers == []
 
 
 def test_listener_parse_audio_uses_message_text_when_metadata_missing():

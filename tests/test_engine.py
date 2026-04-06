@@ -230,6 +230,45 @@ async def test_engine_respond_list_returns_search_text(mock_client, monkeypatch)
 
 
 @pytest.mark.asyncio
+async def test_engine_return_context_uses_snake_case_keys(mock_client, monkeypatch):
+    bot_config = {
+        "bot_username": "@testbot",
+        "settings": {"timeout": 15, "retry": 0},
+        "commands": {
+            "search": {
+                "steps": [
+                    {"action": "send_message", "content": "/search {query}"},
+                    {
+                        "action": "wait_response",
+                        "expect": "text_message",
+                        "extract": {"pattern": r"^(\d+)", "save_as": "choice"},
+                    },
+                ]
+            }
+        },
+    }
+
+    first_message = MagicMock()
+    first_message.id = 101
+    mock_client.send_message.return_value = first_message
+    monkeypatch.setattr(
+        "musigate.gateway.executor.Listener.wait",
+        AsyncMock(return_value={"type": "text_message", "text": "1. First Song"}),
+    )
+
+    engine = Engine(bot_config, mock_client)
+    context = await engine._run_async("search", query="First Song", return_context=True)
+
+    assert "last_response" in context
+    assert context["last_response"]["text"] == "1. First Song"
+    assert context["last_action_message_id"] == 101
+    assert context["extracted_data"]["choice"] == "1"
+    assert "lastResponse" not in context
+    assert "lastActionMessageId" not in context
+    assert "extractedData" not in context
+
+
+@pytest.mark.asyncio
 async def test_engine_download_pick_uses_explicit_result_index(mock_client, monkeypatch, tmp_path):
     bot_config = {
         "bot_username": "@testbot",

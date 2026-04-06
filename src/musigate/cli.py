@@ -144,7 +144,7 @@ def _build_search_payload(
     query: str,
     context: dict[str, Any],
 ) -> dict[str, Any]:
-    response = context.get("lastResponse") or context.get("last_response") or {}
+    response = context.get("last_response") or {}
     raw_text = context.get("result") if isinstance(context.get("result"), str) else ""
     if not raw_text:
         raw_text = response.get("text", "")
@@ -170,7 +170,7 @@ def _build_transfer_payload(
     query: str | None = None,
     url: str | None = None,
 ) -> dict[str, Any]:
-    response = context.get("lastResponse") or context.get("last_response") or {}
+    response = context.get("last_response") or {}
 
     return _compact_payload(
         {

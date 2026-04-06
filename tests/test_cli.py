@@ -21,7 +21,7 @@ def test_search_json_output(monkeypatch):
             "bot_username": "@Music163bot",
         }, {
             "result": raw_text,
-            "lastResponse": {
+            "last_response": {
                 "type": "inline_buttons",
                 "text": raw_text,
                 "buttons": [
@@ -60,7 +60,7 @@ def test_download_json_output(monkeypatch):
             "output": "./downloads",
             "result": "./downloads/Linkin Park-Numb.mp3",
             "result_filename": "Linkin Park-Numb.mp3",
-            "lastResponse": {
+            "last_response": {
                 "type": "audio_file",
                 "title": "Numb",
                 "artist": "Linkin Park",
