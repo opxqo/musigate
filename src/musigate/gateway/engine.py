@@ -19,6 +19,8 @@ class Engine:
         context = {
             "query": kwargs.get("query"),
             "url": kwargs.get("url"),
+            "source": kwargs.get("source"),
+            "search_command": kwargs.get("search_command", "/search"),
             "pick": kwargs.get("pick"),
             "output": kwargs.get("output", "./downloads"),
             "show_progress": kwargs.get("show_progress", False),

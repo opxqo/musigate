@@ -2,7 +2,7 @@
 
 ## Development entrypoint
 
-Use the repo virtualenv during development:
+In repo development, prefer the repo virtualenv entrypoint for reliability:
 
 ```powershell
 .\.venv\Scripts\python.exe -m musigate.cli <command> ...

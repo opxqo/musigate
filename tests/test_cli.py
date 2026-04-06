@@ -14,9 +14,11 @@ def test_search_json_output(monkeypatch):
         assert command == "search"
         assert bot == "music163"
         assert include_context is True
-        assert kwargs["query"] == "不凡"
+        assert kwargs["query"] == "Numb"
+        assert kwargs["search_command"] == "/search"
+        assert kwargs["source"] is None
 
-        raw_text = "1.「不凡」 - 王铮亮\n2.「不凡2024」 - Misic涂"
+        raw_text = "1. Numb - Linkin Park\n2. Numb 2024 - Demo Artist"
         return {
             "name": "Music163",
             "bot_username": "@Music163bot",
@@ -34,16 +36,16 @@ def test_search_json_output(monkeypatch):
 
     monkeypatch.setattr(cli, "_run_engine_command", fake_run_engine_command)
 
-    result = runner.invoke(cli.app, ["search", "不凡", "--bot", "music163", "--json"])
+    result = runner.invoke(cli.app, ["search", "Numb", "--bot", "music163", "--json"])
 
     assert result.exit_code == 0
     payload = json.loads(result.stdout)
     assert payload["ok"] is True
     assert payload["command"] == "search"
-    assert payload["query"] == "不凡"
+    assert payload["query"] == "Numb"
     assert payload["results"][0]["index"] == 1
-    assert payload["results"][0]["title"] == "「不凡」"
-    assert payload["results"][0]["artist"] == "王铮亮"
+    assert payload["results"][0]["title"] == "Numb"
+    assert payload["results"][0]["artist"] == "Linkin Park"
 
 
 def test_download_json_output(monkeypatch):
@@ -52,6 +54,8 @@ def test_download_json_output(monkeypatch):
         assert include_context is True
         assert kwargs["show_progress"] is False
         assert kwargs["pick"] == 2
+        assert kwargs["search_command"] == "/search"
+        assert kwargs["source"] is None
 
         return {
             "name": "Music163",
@@ -98,6 +102,8 @@ def test_download_human_output_enables_progress(monkeypatch):
         assert include_context is False
         assert kwargs["show_progress"] is True
         assert kwargs["pick"] == 2
+        assert kwargs["search_command"] == "/search"
+        assert kwargs["source"] is None
         return {
             "name": "Music163",
             "bot_username": "@Music163bot",
@@ -121,7 +127,7 @@ def test_list_bots_json_output(monkeypatch):
             {
                 "name": "Music163",
                 "bot_username": "@Music163bot",
-                "description": "网易云歌曲下载机器人",
+                "description": "Music downloader bot",
                 "version": "1.0",
                 "commands": {"download": {}, "search": {}},
             }
@@ -151,6 +157,54 @@ def test_test_json_error_output(monkeypatch):
     assert payload["command"] == "test"
     assert payload["bot"] == "missing"
     assert "missing bot config" in payload["error"]
+
+
+def test_search_source_maps_music_v1_platform_command(monkeypatch):
+    async def fake_run_engine_command(command, bot, include_context=False, **kwargs):
+        assert command == "search"
+        assert bot == "music_v1"
+        assert include_context is True
+        assert kwargs["query"] == "Sea Bottom"
+        assert kwargs["source"] == "qq"
+        assert kwargs["search_command"] == "/qq"
+
+        raw_text = "1. Sea Bottom - Phoenix Legend"
+        return {
+            "name": "MusicV1",
+            "bot_username": "@music_v1bot",
+        }, {
+            "source": "qq",
+            "search_command": "/qq",
+            "result": raw_text,
+            "last_response": {
+                "type": "inline_buttons",
+                "text": raw_text,
+                "buttons": [[{"text": "1", "data": "1"}]],
+            },
+        }
+
+    monkeypatch.setattr(cli, "_run_engine_command", fake_run_engine_command)
+
+    result = runner.invoke(
+        cli.app,
+        ["search", "Sea Bottom", "--bot", "music_v1", "--source", "qq", "--json"],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["source"] == "qq"
+    assert payload["results"][0]["index"] == 1
+
+
+def test_download_source_rejects_unsupported_bot():
+    result = runner.invoke(
+        cli.app,
+        ["download", "Numb", "--bot", "music163", "--source", "qq"],
+    )
+
+    assert result.exit_code == 1
+    assert '--source is not supported for bot "music163"' in result.stdout
 
 
 def test_login_prompts_for_missing_credentials_and_saves(monkeypatch, tmp_path):

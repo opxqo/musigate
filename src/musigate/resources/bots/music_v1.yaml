@@ -11,7 +11,7 @@ commands:
   download:
     steps:
       - action: send_message
-        content: "/search {query}"
+        content: "{search_command} {query}"
 
       - action: wait_response
         expect: inline_buttons
@@ -31,7 +31,7 @@ commands:
   search:
     steps:
       - action: send_message
-        content: "/search {query}"
+        content: "{search_command} {query}"
 
       - action: wait_response
         expect: inline_buttons

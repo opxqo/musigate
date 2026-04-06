@@ -230,6 +230,38 @@ async def test_engine_respond_list_returns_search_text(mock_client, monkeypatch)
 
 
 @pytest.mark.asyncio
+async def test_engine_renders_search_command_from_context(mock_client):
+    bot_config = {
+        "bot_username": "@testbot",
+        "settings": {"timeout": 15, "retry": 0},
+        "commands": {
+            "search": {
+                "steps": [
+                    {"action": "send_message", "content": "{search_command} {query}"},
+                ]
+            }
+        },
+    }
+
+    message = MagicMock()
+    message.id = 101
+    mock_client.send_message.return_value = message
+
+    engine = Engine(bot_config, mock_client)
+    result = await engine._run_async(
+        "search",
+        query="Sea Bottom",
+        source="qq",
+        search_command="/qq",
+        return_context=True,
+    )
+
+    assert mock_client.send_message.await_args.args[1] == "/qq Sea Bottom"
+    assert result["search_command"] == "/qq"
+    assert result["source"] == "qq"
+
+
+@pytest.mark.asyncio
 async def test_engine_return_context_uses_snake_case_keys(mock_client, monkeypatch):
     bot_config = {
         "bot_username": "@testbot",

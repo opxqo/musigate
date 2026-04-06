@@ -9,9 +9,9 @@ Use this skill when the task is about operating `musigate`, not changing its int
 
 ## Default approach
 
-1. Prefer the repo entrypoint during development:
+1. In repo development, prefer the repo venv entrypoint for reliability:
    `.\.venv\Scripts\python.exe -m musigate.cli ...`
-2. Use the installed `musigate ...` command only when validating packaging or release behavior.
+2. For normal user flows or installed-package validation, use `musigate ...`.
 3. Start with `list-bots` before assuming a bot exists.
 4. Prefer `--json` when another tool, script, or agent needs stable output.
 

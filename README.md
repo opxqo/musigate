@@ -85,16 +85,49 @@ musigate login
 
 首次登录会交互式引导你完成以下步骤：
 
-1. 提示输入 **Telegram API ID** 和 **API Hash**（从 [my.telegram.org](https://my.telegram.org) 获取）
-2. 自动保存凭据到 `~/.musigate/.env`（后续命令自动读取）
-3. 提示输入**手机号**和**验证码**
-4. 支持**两步验证**账号
+#### 第一步：获取 Telegram API 凭据
 
-整个过程只需这一条命令，之后所有操作（搜索、下载等）都复用已保存的 session。
+如果还没有 API ID 和 API Hash，按以下步骤获取（只需一次）：
 
-> 💡 也可以通过命令行参数传入：`musigate login --api-id YOUR_ID --api-hash YOUR_HASH`
+1. 在浏览器打开 [https://my.telegram.org](https://my.telegram.org)
+2. 输入你的**手机号**（带国际区号，如 `+8613800138000`）
+3. Telegram 会发送一个**验证码**到你的 Telegram 客户端（不是短信），在网页输入
+4. 登录成功后，点击 **API development tools**
+5. 填写应用信息（随便填即可）：
+   - **App title**: `musigate`（或任意名称）
+   - **Short name**: `musigate`（或任意短名称）
+   - **URL**: 留空
+- **Platform**: 选 `Other`
+   - **Description**: 可选填，如 `Personal use`
+6. 点击 **Create**，页面会显示两个值：
+   - **api_id**: 一串数字，类似 `12345678`
+   - **api_hash**: 一串字母数字混合字符串，类似 `abcdef1234567890abcdef`
+7. **保存好这两个值**
+
+#### 第二步：运行 login 命令
+
+拿到 api_id 和 api_hash 后：
+
+```bash
+musigate login
+```
+
+命令会自动提示你：
+1. 输入 **API ID**
+2. 输入 **API Hash** → 输入后**自动保存到 `~/.musigate/.env`**（后续所有命令自动读取）
+3. 输入**手机号**和**验证码** → 完成 Telegram 登录
+
+整个过程只需这一条命令，之后搜索、下载等操作都复用已保存的 session。
+
+> 💡 也可以跳过交互提示，直接通过命令行参数传入凭据：
+> ```bash
+> musigate login --api-id 12345678 --api-hash abcdef1234567890abcdef
+> ```
 >
-> 🔄 切换账号：`musigate login --session-name another_account`
+> 🔄 切换账号（多账号场景）：
+> ```bash
+> musigate login --session-name another_account
+> ```
 
 ### 高级配置（可选）
 
@@ -127,6 +160,10 @@ musigate download "Numb" --bot music163
 
 # 按搜索结果编号精确下载
 musigate download "海底" --bot music_v1 --pick 2
+
+# 指定 music_v1 搜索平台
+musigate search "海底" --bot music_v1 --source qq
+musigate download "海底" --bot music_v1 --source netease --pick 1
 
 # 通过链接下载
 musigate url "https://music.163.com/song?id=xxx" --bot music163

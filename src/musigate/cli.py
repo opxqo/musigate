@@ -22,6 +22,14 @@ from musigate.utils.config import (
 
 app = typer.Typer(no_args_is_help=True)
 console = Console()
+BOT_SOURCE_COMMANDS = {
+    "music_v1": {
+        "qq": "/qq",
+        "netease": "/netease",
+        "kuwo": "/kuwo",
+        "kugou": "/kugou",
+    }
+}
 
 
 def _print_status(message: str, style: str = "white") -> None:
@@ -60,6 +68,26 @@ def _build_client(settings: dict[str, Any]) -> Client:
         session_name=resolve_session_name(settings["telegram"]["sessionName"]),
         proxy=build_telegram_proxy(settings),
     )
+
+
+def _resolve_search_command(bot: str, source: str | None) -> str:
+    if not source:
+        return "/search"
+
+    normalized_source = source.strip().lower()
+    bot_sources = BOT_SOURCE_COMMANDS.get(bot)
+    if not bot_sources:
+        raise ValueError(f'--source is not supported for bot "{bot}"')
+
+    search_command = bot_sources.get(normalized_source)
+    if not search_command:
+        supported_sources = ", ".join(sorted(bot_sources))
+        raise ValueError(
+            f'Unsupported source "{source}" for bot "{bot}". '
+            f"Supported values: {supported_sources}"
+        )
+
+    return search_command
 
 
 def _resolve_login_settings(
@@ -198,6 +226,7 @@ def _build_search_payload(
             "ok": True,
             "command": "search",
             "query": query,
+            "source": context.get("source"),
             "bot": bot_config.get("name"),
             "bot_username": bot_config.get("bot_username"),
             "raw_text": raw_text,
@@ -223,6 +252,7 @@ def _build_transfer_payload(
             "bot": bot_config.get("name"),
             "bot_username": bot_config.get("bot_username"),
             "query": query,
+            "source": context.get("source"),
             "url": url,
             "selected_index": context.get("pick"),
             "output_dir": context.get("output"),
@@ -248,6 +278,7 @@ def _emit_command_error(
     *,
     bot: str | None = None,
     query: str | None = None,
+    source: str | None = None,
     url: str | None = None,
 ) -> None:
     _emit_json(
@@ -257,6 +288,7 @@ def _emit_command_error(
                 "command": command,
                 "bot": bot,
                 "query": query,
+                "source": source,
                 "url": url,
                 "error": str(error),
             }
@@ -317,6 +349,11 @@ def logout():
 def download(
     query: str = typer.Argument(..., help="歌曲名或关键词"),
     bot: str = typer.Option(..., "--bot", "-b", help="机器人名称"),
+    source: str | None = typer.Option(
+        None,
+        "--source",
+        help="Search source for bots that support platform-specific commands",
+    ),
     pick: int | None = typer.Option(None, "--pick", min=1, help="按搜索结果编号下载"),
     output: str | None = typer.Option(None, "--output", "-o", help="输出目录"),
     json_output: bool = typer.Option(False, "--json", help="以 JSON 格式输出结果"),
@@ -325,12 +362,15 @@ def download(
     try:
         settings = load_settings()
         target_output = output or settings["download"]["defaultOutput"]
+        search_command = _resolve_search_command(bot, source)
         bot_config, result = asyncio.run(
             _run_engine_command(
                 "download",
                 bot,
                 include_context=json_output,
                 query=query,
+                source=source.lower() if source else None,
+                search_command=search_command,
                 pick=pick,
                 output=target_output,
                 show_progress=not json_output,
@@ -338,11 +378,15 @@ def download(
         )
 
         if json_output:
-            _emit_json(_build_transfer_payload("download", bot_config, result, query=query))
+            _emit_json(
+                _build_transfer_payload("download", bot_config, result, query=query)
+            )
             return
 
         _print_status(f"OK: 已连接 {bot_config['bot_username']}", "blue")
         _print_status(f'OK: 开始搜索 "{query}"', "blue")
+        if source:
+            _print_status(f"OK: 使用搜索源 {source.lower()}", "blue")
         if pick is not None:
             _print_status(f"OK: 指定下载第 {pick} 条结果", "blue")
         if result:
@@ -351,7 +395,7 @@ def download(
             _print_status("WARN: 流程执行完毕，但未返回文件", "yellow")
     except Exception as error:
         if json_output:
-            _emit_command_error("download", error, bot=bot, query=query)
+            _emit_command_error("download", error, bot=bot, query=query, source=source)
         else:
             _print_status(f"ERROR: {error}", "red")
         raise typer.Exit(code=1)
@@ -361,16 +405,24 @@ def download(
 def search(
     query: str = typer.Argument(..., help="歌曲名或关键词"),
     bot: str = typer.Option(..., "--bot", "-b", help="机器人名称"),
+    source: str | None = typer.Option(
+        None,
+        "--source",
+        help="Search source for bots that support platform-specific commands",
+    ),
     json_output: bool = typer.Option(False, "--json", help="以 JSON 格式输出结果"),
 ):
     """仅搜索，返回结果列表"""
     try:
+        search_command = _resolve_search_command(bot, source)
         bot_config, result = asyncio.run(
             _run_engine_command(
                 "search",
                 bot,
                 include_context=json_output,
                 query=query,
+                source=source.lower() if source else None,
+                search_command=search_command,
             )
         )
 
@@ -380,6 +432,8 @@ def search(
 
         _print_status(f"OK: 已连接 {bot_config['bot_username']}", "blue")
         _print_status(f'OK: 开始搜索 "{query}"', "blue")
+        if source:
+            _print_status(f"OK: 使用搜索源 {source.lower()}", "blue")
         if result:
             _print_status("OK: 搜索结果:", "green")
             if isinstance(result, str):
@@ -392,7 +446,7 @@ def search(
             _print_status("WARN: 未找到结果", "yellow")
     except Exception as error:
         if json_output:
-            _emit_command_error("search", error, bot=bot, query=query)
+            _emit_command_error("search", error, bot=bot, query=query, source=source)
         else:
             _print_status(f"ERROR: {error}", "red")
         raise typer.Exit(code=1)
