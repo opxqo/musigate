@@ -19,7 +19,7 @@ pip install musigate
 From a local wheel:
 
 ```bash
-pip install dist/musigate-0.1.0a3-py3-none-any.whl
+pip install dist/musigate-0.1.0a4-py3-none-any.whl
 ```
 
 For development:
@@ -36,7 +36,7 @@ The easiest setup flow is to run:
 musigate login
 ```
 
-If `TELEGRAM_API_ID` or `TELEGRAM_API_HASH` is missing, `musigate` will prompt for them and save them to `.env` in your current directory by default.
+If `TELEGRAM_API_ID` or `TELEGRAM_API_HASH` is missing, `musigate` will prompt for them and save them to `~/.musigate/.env` by default. You can override this location with `MUSIGATE_HOME`.
 
 You can still configure credentials manually with `.env` if you prefer. Required values:
 
@@ -116,7 +116,7 @@ pip install musigate
 从本地 wheel 安装：
 
 ```bash
-pip install dist/musigate-0.1.0a3-py3-none-any.whl
+pip install dist/musigate-0.1.0a4-py3-none-any.whl
 ```
 
 开发模式安装：
@@ -133,7 +133,7 @@ pip install -e .[dev]
 musigate login
 ```
 
-如果当前目录还没有 `TELEGRAM_API_ID` 或 `TELEGRAM_API_HASH`，`musigate` 会直接提示你输入，并默认保存到当前目录的 `.env`。
+如果还没有 `TELEGRAM_API_ID` 或 `TELEGRAM_API_HASH`，`musigate` 会直接提示你输入，并默认保存到 `~/.musigate/.env`。如果你想改位置，也可以设置 `MUSIGATE_HOME`。
 
 如果你更喜欢手动配置，也可以自己写 `.env`。必填项：
 

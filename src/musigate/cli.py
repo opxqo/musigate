@@ -16,6 +16,7 @@ from musigate.utils.config import (
     load_settings,
     persist_env_values,
     resolve_env_file,
+    resolve_session_name,
     validate_telegram_settings,
 )
 
@@ -56,7 +57,7 @@ def _build_client(settings: dict[str, Any]) -> Client:
     return Client(
         api_id=settings["telegram"]["apiId"],
         api_hash=settings["telegram"]["apiHash"],
-        session_name=settings["telegram"]["sessionName"],
+        session_name=resolve_session_name(settings["telegram"]["sessionName"]),
         proxy=build_telegram_proxy(settings),
     )
 
@@ -291,7 +292,7 @@ def login(
     auth = TelegramAuth(
         api_id=settings["telegram"]["apiId"],
         api_hash=settings["telegram"]["apiHash"],
-        session_name=settings["telegram"]["sessionName"],
+        session_name=resolve_session_name(settings["telegram"]["sessionName"]),
         proxy=build_telegram_proxy(settings),
     )
     success = asyncio.run(auth.login())
@@ -306,7 +307,7 @@ def logout():
     auth = TelegramAuth(
         api_id=settings["telegram"]["apiId"],
         api_hash=settings["telegram"]["apiHash"],
-        session_name=settings["telegram"]["sessionName"],
+        session_name=resolve_session_name(settings["telegram"]["sessionName"]),
         proxy=build_telegram_proxy(settings),
     )
     asyncio.run(auth.logout())

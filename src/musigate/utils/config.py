@@ -81,7 +81,7 @@ def _load_settings_overrides() -> dict:
 
 def load_settings():
     """Load settings from .env, external config, and packaged defaults."""
-    load_dotenv()
+    load_dotenv(dotenv_path=resolve_env_file())
     settings = deepcopy(DEFAULT_SETTINGS)
     _merge_dict(settings, _load_settings_overrides())
 
@@ -133,8 +133,32 @@ def load_settings():
     return settings
 
 
+def resolve_app_dir() -> Path:
+    custom_home = os.getenv("MUSIGATE_HOME")
+    if custom_home:
+        return Path(custom_home).expanduser()
+
+    return Path.home() / ".musigate"
+
+
 def resolve_env_file() -> Path:
-    return Path.cwd() / ".env"
+    return resolve_app_dir() / ".env"
+
+
+def resolve_session_name(session_name: str | None) -> str:
+    raw_name = (session_name or "musigate").strip() or "musigate"
+    session_path = Path(raw_name).expanduser()
+
+    if session_path.is_absolute() or session_path.parent != Path("."):
+        target = session_path
+    else:
+        target = resolve_app_dir() / session_path.name
+
+    if target.suffix == ".session":
+        target = target.with_suffix("")
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    return str(target)
 
 
 def persist_env_values(values: dict[str, str | int]) -> Path:

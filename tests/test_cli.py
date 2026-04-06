@@ -189,13 +189,14 @@ def test_login_prompts_for_missing_credentials_and_saves(monkeypatch, tmp_path):
 
     monkeypatch.setattr(cli, "persist_env_values", fake_persist_env_values)
     monkeypatch.setattr(cli, "resolve_env_file", lambda: env_path)
+    monkeypatch.setattr(cli, "resolve_session_name", lambda name: str(tmp_path / "sessions" / name))
 
     result = runner.invoke(cli.app, ["login"], input="123456\nsecret-hash\n")
 
     assert result.exit_code == 0
     assert captured["api_id"] == 123456
     assert captured["api_hash"] == "secret-hash"
-    assert captured["session_name"] == "musigate"
+    assert captured["session_name"] == str(tmp_path / "sessions" / "musigate")
     assert captured["login_called"] is True
     assert captured["saved_values"] == {
         "TELEGRAM_API_ID": 123456,
