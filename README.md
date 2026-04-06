@@ -64,7 +64,7 @@ musigate 是一个 Python CLI 工具，通过**声明式 YAML 配置**与 Telegr
 ### 安装
 
 ```bash
-pip install -U musigate==0.1.0a4
+pip install -U musigate==0.1.0a5
 ```
 
 或从源码开发安装：
